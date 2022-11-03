@@ -4,6 +4,7 @@ var renderer;
 var controls;
 var viewModel;
 var itemMaterial;
+var excel_data = {}
 
 async function PackContainers(request) {
 	return $.ajax({
@@ -59,6 +60,30 @@ function render() {
 	renderer.render( scene, camera );
 }
 
+function readExcel() {
+	excel_data = {}
+	var input = event.target.files[0];
+	var reader = new FileReader();
+
+	reader.readAsText(input)
+	reader.onload = function() {
+		var data = reader.result;
+		var lines = data.split("\n")
+
+		for (var i = 1; i < lines.length-1; i++)
+		{
+			var info = lines[i].split(",");
+			excel_data[info[0]] = {
+				Name: info[1],
+				Lat: info[2],
+				Width: info[3],
+				Height: info[4],
+				Qty: info[5],
+			}
+		}
+	}
+}
+
 var ViewModel = function () {
 	var self = this;
 
@@ -81,6 +106,14 @@ var ViewModel = function () {
 	self.NewItemToPack = ko.mapping.fromJS(new ItemToPack());
 	self.NewContainer = ko.mapping.fromJS(new Container());
 
+	self.GenerateItemsToPackExcel = function () {
+		self.ItemsToPack([]);
+		for (excel in excel_data)
+		{
+			self.ItemsToPack.push(ko.mapping.fromJS({ ID: excel, Name: excel_data[excel]['Name'], Length: excel_data[excel]['Lat'], Width: excel_data[excel]['Width'], Height: excel_data[excel]['Height'], Quantity: excel_data[excel]['Qty'] }));
+		}
+		
+	}
 	self.GenerateItemsToPack = function () {
 		self.ItemsToPack([]);
 		self.ItemsToPack.push(ko.mapping.fromJS({ ID: 1000, Name: 'Item1', Length: 5, Width: 4, Height: 2, Quantity: 1 }));
@@ -162,6 +195,7 @@ var ViewModel = function () {
 				Dim3: item.Height(),
 				Quantity: item.Quantity()
 			};
+			console.log(itemToPack)
 			
 			itemsToPack.push(itemToPack);
 		});
